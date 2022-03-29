@@ -25,6 +25,10 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
+	UFUNCTION()
+	void HandleAggroBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+
+	// Can be called within blueprints
 	UFUNCTION(BlueprintCallable)
 		void SuperCrazyFunction();
 
@@ -32,7 +36,7 @@ public:
 		USceneComponent* Root;
 
 	UPROPERTY(VisibleAnywhere)
-		USphereComponent* Sphere;
+		USphereComponent* AggroSphere;
 
 	UPROPERTY(VisibleAnywhere)
 		UStaticMeshComponent* Mesh;
@@ -40,4 +44,7 @@ public:
 	UPROPERTY(EditInstanceOnly, BlueprintReadOnly)
 		float Speed = 200.0f;
 
+	bool IsChasing = false;
+
+	APawn* ChaseTarget = nullptr;
 };

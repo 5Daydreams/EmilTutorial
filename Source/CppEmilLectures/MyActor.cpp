@@ -4,6 +4,7 @@
 #include "MyActor.h"
 #include "Components/SphereComponent.h"
 #include "Components/StaticMeshComponent.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values
 AMyActor::AMyActor()
@@ -14,11 +15,14 @@ AMyActor::AMyActor()
 	Root = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	RootComponent = Root;
 
-	Sphere = CreateDefaultSubobject<USphereComponent>(TEXT("SphereCollision"));
-	Sphere->SetupAttachment(Root);
+	AggroSphere = CreateDefaultSubobject<USphereComponent>(TEXT("AggroSphere"));
+	AggroSphere->SetupAttachment(Root);
+
+	AggroSphere->SetSphereRadius(500.0f);
+	AggroSphere->OnComponentBeginOverlap.AddDynamic(this, &AMyActor::HandleAggroBeginOverlap);
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
-	Mesh->SetupAttachment(Sphere);
+	Mesh->SetupAttachment(AggroSphere);
 }
 
 // Called when the game starts or when spawned
@@ -28,18 +32,34 @@ void AMyActor::BeginPlay()
 	UE_LOG(LogTemp, Log, TEXT("Hell ye, prints and shit"));
 }
 
+// Called every frame
+void AMyActor::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	if (ChaseTarget != nullptr)
+	{
+		FVector Direction = ChaseTarget->GetActorLocation() - this->GetActorLocation();
+		Direction.Normalize();
+
+		FRotator Rotation = UKismetMathLibrary::MakeRotFromX(Direction);
+		this->SetActorRotation(Rotation);
+
+		AddActorWorldOffset(Direction * Speed * DeltaTime);
+	}
+
+
+}
+
+void AMyActor::HandleAggroBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	if (OtherActor->IsA<APawn>())
+	{
+		ChaseTarget = Cast<APawn>(OtherActor);
+	}
+}
+
 void AMyActor::SuperCrazyFunction()
 {
 	AddActorLocalOffset(FVector::UpVector * 500.0f);
 }
-
-// Called every frame
-void AMyActor::Tick(float DeltaTime)
-{
-	FVector vec;
-	FRotator rot;
-
-	Super::Tick(DeltaTime);
-	AddActorWorldOffset(GetActorForwardVector() * Speed * DeltaTime);
-}
-
